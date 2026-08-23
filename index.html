@@ -301,6 +301,91 @@
             grid-column: unset;
         }
 
+        .teacher-toggle-row {
+            padding: 12px 30px 0;
+            text-align: right;
+        }
+
+        .teacher-toggle-link {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1976D2;
+            cursor: pointer;
+            text-decoration: underline;
+            background: none;
+            border: none;
+            font-family: 'EB Garamond', 'Nikosh', serif;
+        }
+
+        .teacher-toggle-link:hover {
+            color: #0e5aa8;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 8px;
+            border: 1.5px solid #dde3e8;
+            background: #fff;
+            color: #333;
+            cursor: pointer;
+            font-family: 'EB Garamond', 'Nikosh', serif;
+            transition: all 0.15s ease;
+        }
+
+        .mode-btn:hover {
+            border-color: #14A44D;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #0e7a38, #14A44D);
+            border-color: #14A44D;
+            color: #fff;
+        }
+
+        .all-results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .all-results-table th,
+        .all-results-table td {
+            border: 1px solid #dde3e8;
+            padding: 8px 10px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .all-results-table th {
+            background: #f4f6f4;
+            font-weight: 700;
+        }
+
+        .all-results-table .view-btn {
+            padding: 5px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            background: linear-gradient(135deg, #0e7a38, #14A44D);
+            color: #fff;
+            cursor: pointer;
+            font-family: 'EB Garamond', 'Nikosh', serif;
+            font-weight: 700;
+        }
+
+        .all-results-table .view-btn:hover {
+            opacity: 0.9;
+        }
+
         .button-row {
             display: flex;
             gap: 12px;
@@ -1204,7 +1289,23 @@
     <div class="search-area">
         <div class="search-container">
             <p class="search-title">Please provide the following information to view result</p>
+            <div class="teacher-toggle-row">
+                <button type="button" class="teacher-toggle-link" id="teacherToggleBtn" onclick="toggleTeacherLogin()">
+                    <i class="fas fa-chalkboard-teacher"></i>&nbsp;Teacher Login
+                </button>
+            </div>
             <div class="field-grid">
+                <div class="field" id="teacherIdField" style="display:none;">
+                    <label for="teacherIdInput">Teacher ID :</label>
+                    <input id="teacherIdInput" placeholder="Enter Teacher ID" autocomplete="off">
+                </div>
+                <div class="field" id="teacherModeField" style="display:none;">
+                    <label>Mode :</label>
+                    <div class="mode-buttons">
+                        <button type="button" class="mode-btn" id="modeIndividualBtn" onclick="selectTeacherMode('INDIVIDUAL')">INDIVIDUAL</button>
+                        <button type="button" class="mode-btn" id="modeAllBtn" onclick="selectTeacherMode('ALL')">ALL</button>
+                    </div>
+                </div>
                 <div class="field">
                     <label for="classSelect">Class :</label>
                     <select id="classSelect">
@@ -1253,11 +1354,11 @@
                         <option value="2024">2024</option>
                     </select>
                 </div>
-                <div class="field field-wide">
+                <div class="field field-wide" id="rollField">
                     <label for="rollInput">Roll Number :</label>
                     <input id="rollInput" placeholder="e.g. 105" autocomplete="off">
                 </div>
-                <div class="field field-wide">
+                <div class="field field-wide" id="registrationField">
                     <label for="registrationInput">Registration No. :</label>
                     <input id="registrationInput" placeholder="e.g. 1234567890" autocomplete="off">
                 </div>
@@ -1316,7 +1417,68 @@
         let lastSelectedClass = '';
         let lastSelectedYear = '';
 
+        // ================= TEACHER LOGIN (শিক্ষকদের জন্য) ================= //
+        let teacherMode = null; // 'INDIVIDUAL' অথবা 'ALL'
+
+        function toggleTeacherLogin() {
+            const teacherIdField = document.getElementById('teacherIdField');
+            const isOpen = teacherIdField.style.display === 'flex';
+
+            if (isOpen) {
+                // বন্ধ করলে সব রিসেট হয়ে স্বাভাবিক শিক্ষার্থী ফর্মে ফিরে যাবে
+                teacherIdField.style.display = 'none';
+                document.getElementById('teacherModeField').style.display = 'none';
+                document.getElementById('teacherIdInput').value = '';
+                teacherMode = null;
+                document.getElementById('modeIndividualBtn').classList.remove('active');
+                document.getElementById('modeAllBtn').classList.remove('active');
+                document.getElementById('rollField').style.display = 'flex';
+                document.getElementById('registrationField').style.display = 'flex';
+            } else {
+                teacherIdField.style.display = 'flex';
+            }
+        }
+
+        // ✅ Teacher ID ইনপুট দিলে INDIVIDUAL/ALL অপশন দেখা যাবে
+        document.getElementById('teacherIdInput').addEventListener('input', function () {
+            const teacherModeField = document.getElementById('teacherModeField');
+            if (this.value.trim() !== '') {
+                teacherModeField.style.display = 'flex';
+            } else {
+                teacherModeField.style.display = 'none';
+                teacherMode = null;
+                document.getElementById('modeIndividualBtn').classList.remove('active');
+                document.getElementById('modeAllBtn').classList.remove('active');
+                document.getElementById('rollField').style.display = 'flex';
+                document.getElementById('registrationField').style.display = 'flex';
+            }
+        });
+
+        function selectTeacherMode(mode) {
+            teacherMode = mode;
+            document.getElementById('modeIndividualBtn').classList.toggle('active', mode === 'INDIVIDUAL');
+            document.getElementById('modeAllBtn').classList.toggle('active', mode === 'ALL');
+
+            // শিক্ষার্থীর Registration No. কখনোই লাগবে না Teacher মোডে
+            document.getElementById('registrationField').style.display = 'none';
+
+            if (mode === 'INDIVIDUAL') {
+                document.getElementById('rollField').style.display = 'flex';
+            } else {
+                // ALL মোডে Roll লাগবে না, পুরো ক্লাসের ফলাফল আসবে
+                document.getElementById('rollField').style.display = 'none';
+            }
+        }
+
         function searchResult() {
+            const teacherId = document.getElementById("teacherIdInput").value.trim();
+
+            // ✅ Teacher মোড সক্রিয় থাকলে আলাদা ফ্লো — শিক্ষার্থীর সিস্টেম অপরিবর্তিত থাকবে
+            if (teacherId && teacherMode) {
+                handleTeacherSearch(teacherId, teacherMode);
+                return;
+            }
+
             const roll = document.getElementById("rollInput").value.trim();
             const registration = document.getElementById("registrationInput").value.trim();
             const className = document.getElementById("classSelect").value;
@@ -1360,9 +1522,142 @@
             document.getElementById("result").innerHTML = '<div class="loading">Loading result</div>';
 
             // ✅ Apps Script ওয়েব অ্যাপের Deploy URL (kashiani1.pages.dev থেকে হোস্ট করার জন্য fetch ব্যবহার করা হচ্ছে)
-            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrjvl6lTI4I37u_Mi2l3zQxs_XywRc-uPOSeKibUE0vyoexOVJxr7ql7IV5SW3Y7OW-A/exec";
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwMQ20QjtR_0bl7VQb8squ0cH8Y0q9UroAlfVTcfsJybESQsJq_TFpb1LpKaADt_V_u/exec";
 
             const params = new URLSearchParams({ roll, registration, class: className, section, examName, examYear });
+
+            fetch(APPS_SCRIPT_URL + "?" + params.toString())
+                .then(res => res.json())
+                .then(data => displayResult(data))
+                .catch(err => {
+                    document.getElementById("result").innerHTML = `<div class="container" style="animation: none;"><div class="error-message">⚠ Server error: ${err.message}</div></div>`;
+                });
+        }
+
+        // ✅ শিক্ষকের জন্য — Teacher ID দিয়ে সরাসরি ফলাফল দেখা (INDIVIDUAL / ALL)
+        function handleTeacherSearch(teacherId, mode) {
+            const className = document.getElementById("classSelect").value;
+            const senior = isSeniorClass(className);
+            const section = senior
+                ? document.getElementById("groupSelect").value
+                : document.getElementById("sectionSelect").value;
+            const examName = document.getElementById("examSelect").value;
+            const examYear = document.getElementById("yearSelect").value;
+            const resultDiv = document.getElementById("result");
+
+            lastSelectedClass = className;
+            lastSelectedYear = examYear;
+
+            if (!className) {
+                resultDiv.innerHTML = `<div class="container" style="animation: none;"><div class="error-message">⚠ Please select Class!</div></div>`;
+                return;
+            }
+
+            if (!section) {
+                const msg = senior ? 'Please select Group!' : 'Please select Section!';
+                resultDiv.innerHTML = `<div class="container" style="animation: none;"><div class="error-message">⚠ ${msg}</div></div>`;
+                return;
+            }
+
+            if (!examName || !examYear) {
+                resultDiv.innerHTML = `<div class="container" style="animation: none;"><div class="error-message">⚠ Please select Name of Examination and Year!</div></div>`;
+                return;
+            }
+
+            let roll = '';
+            if (mode === 'INDIVIDUAL') {
+                roll = document.getElementById("rollInput").value.trim();
+                if (!roll) {
+                    resultDiv.innerHTML = `<div class="container" style="animation: none;"><div class="error-message">⚠ Please enter Roll Number!</div></div>`;
+                    return;
+                }
+            }
+
+            document.getElementById("result").innerHTML = '<div class="loading">Loading result</div>';
+
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwMQ20QjtR_0bl7VQb8squ0cH8Y0q9UroAlfVTcfsJybESQsJq_TFpb1LpKaADt_V_u/exec";
+            const params = new URLSearchParams({ teacherId, mode, class: className, section, examName, examYear });
+            if (roll) params.append('roll', roll);
+
+            fetch(APPS_SCRIPT_URL + "?" + params.toString())
+                .then(res => res.json())
+                .then(data => {
+                    if (mode === 'ALL') {
+                        displayAllResults(data);
+                    } else {
+                        displayResult(data);
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("result").innerHTML = `<div class="container" style="animation: none;"><div class="error-message">⚠ Server error: ${err.message}</div></div>`;
+                });
+        }
+
+        // ✅ ALL মোডে পুরো ক্লাসের সারাংশ টেবিল দেখানো
+        function displayAllResults(data) {
+            const resultDiv = document.getElementById("result");
+
+            if (!data.success) {
+                resultDiv.innerHTML = `
+                <div class="container" style="animation: none;">
+                    <div class="error-message">⚠ ${data.message || data.error || 'ফলাফল পাওয়া যায়নি'}</div>
+                </div>`;
+                return;
+            }
+
+            let rows = '';
+            data.students.forEach((s, idx) => {
+                const info = s.studentInfo;
+                const r = s.results;
+                rows += `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td>${info.roll}</td>
+                    <td style="text-align:left;">${info.name}</td>
+                    <td>${r.totalMarks}</td>
+                    <td>${r.gpa}</td>
+                    <td>${r.letterGrade}</td>
+                    <td>${r.position}</td>
+                    <td><button class="view-btn" onclick="viewTeacherIndividual('${info.roll}')">বিস্তারিত</button></td>
+                </tr>`;
+            });
+
+            resultDiv.innerHTML = `
+            <div class="container" style="animation: none;">
+                <h3 style="text-align:center;">${data.examName || ''} — সব শিক্ষার্থীর ফলাফল</h3>
+                <table class="all-results-table">
+                    <thead>
+                        <tr>
+                            <th>Sl</th>
+                            <th>Roll</th>
+                            <th>Name</th>
+                            <th>Total</th>
+                            <th>GPA</th>
+                            <th>Grade</th>
+                            <th>Position</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+        }
+
+        // ✅ ALL লিস্ট থেকে কোনো একজনের সম্পূর্ণ ট্রান্সক্রিপ্ট দেখা
+        function viewTeacherIndividual(roll) {
+            const className = document.getElementById("classSelect").value;
+            const senior = isSeniorClass(className);
+            const section = senior
+                ? document.getElementById("groupSelect").value
+                : document.getElementById("sectionSelect").value;
+            const examName = document.getElementById("examSelect").value;
+            const examYear = document.getElementById("yearSelect").value;
+            const teacherId = document.getElementById("teacherIdInput").value.trim();
+
+            document.getElementById("result").innerHTML = '<div class="loading">Loading result</div>';
+
+            const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwMQ20QjtR_0bl7VQb8squ0cH8Y0q9UroAlfVTcfsJybESQsJq_TFpb1LpKaADt_V_u/exec";
+            const params = new URLSearchParams({ teacherId, mode: 'INDIVIDUAL', class: className, section, examName, examYear, roll });
 
             fetch(APPS_SCRIPT_URL + "?" + params.toString())
                 .then(res => res.json())
