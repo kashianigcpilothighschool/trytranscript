@@ -393,7 +393,7 @@
       </div>
 
       <div class="pagination-row">
-        <button class="pg-btn" onclick="prevPage()" id="prevBtn" disabled>⬅ পূর্ববর্তী</button>
+        <button class="pg-btn" onclick="prevStudentInfo()" id="prevBtn" disabled>⬅ পূর্ববর্তী</button>
         <span id="pageInfo"></span>
         <button class="pg-btn" onclick="nextPage()" id="nextBtn" disabled>পরবর্তী ➡</button>
         <button class="btn-submit" onclick="submitMarks()" id="submitBtn">✅ সাবমিট করুন</button>
@@ -405,7 +405,7 @@
     <button class="btn-secondary" onclick="openEditor()">✏️ Edit</button>
     <button class="btn-secondary" onclick="openTranscript()">📋 Transcript</button>
     <button class="btn-secondary" onclick="openTabulation()">📊 Tabulation</button>
-    <button class="btn-secondary" onclick="openPage()">📄 Page</button>
+    <button class="btn-secondary" onclick="openStudentInfo()">📄 StudentInfo</button>
     <button class="btn-secondary" onclick="openPaper()">🧾 Paper</button>
     <button class="btn-secondary" onclick="openOthers()">📁 Others</button>
   </div>
@@ -716,19 +716,19 @@
   }
 
   function openEditor() {
-    window.open('https://script.google.com/macros/s/AKfycbzCfMiWKqr1BIdvYFXm2Tq9hbUAKZ8GOPjhoolUr94jQMy8n1YHVzAsfLH-Xhx9YMRa/exec', '_blank');
+    window.open('https://editor-seven-zeta.vercel.app/', '_blank');
   }
 
   function openTranscript() {
-    window.open('https://script.google.com/macros/s/AKfycbzCfMiWKqr1BIdvYFXm2Tq9hbUAKZ8GOPjhoolUr94jQMy8n1YHVzAsfLH-Xhx9YMRa/exec', '_blank');
+    window.open('https://edu-kashianigcpilothighschool.vercel.app/academic-transcript', '_blank');
   }
 
   function openTabulation() {
-    window.open('https://script.google.com/macros/s/AKfycbzCfMiWKqr1BIdvYFXm2Tq9hbUAKZ8GOPjhoolUr94jQMy8n1YHVzAsfLH-Xhx9YMRa/exec', '_blank');
+    window.open('https://resultbook.vercel.app/', '_blank');
   }
 
-  function openPage() {
-    window.open('http://kashiani1.pages.dev/', '_blank');
+  function openStudentInfo() {
+    window.open('https://editor-seven-zeta.vercel.app/addnewstudent', '_blank');
   }
 
   function openPaper() {
