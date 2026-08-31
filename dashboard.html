@@ -234,6 +234,10 @@
     padding:8px 6px;
   }
   td input[type=number]:focus{ background:#fff; }
+  td input[type=number].invalid{
+    border-color:var(--stamp);
+    background:var(--stamp-bg);
+  }
 
   .pagination-row{
     display:flex;
@@ -436,6 +440,83 @@
   // ============================================================
   let subjectsMeta = {};
 
+  // ============================================================
+  // 📏 প্রতিটি বিষয়ের পূর্ণমান (CQ/MCQ/Practical) — এন্ট্রি ভ্যালিডেশনের জন্য
+  // (ব্যাকএন্ডের getMaxMarksForClass()-এর সাথে হুবহু মিল রেখে বসানো হয়েছে,
+  //  যাতে সাবমিট করার আগেই ফ্রন্টএন্ডে সঠিক max মান অনুযায়ী চেক করা যায়)
+  // ============================================================
+  const MAX_MARKS_6_8 = {
+    bangla1:     { cq: 70, mcq: 30 },
+    bangla2:     { cq: 50, mcq: 30 },
+    english1:    { cq: 100 },
+    english2:    { cq: 100 },
+    math:        { cq: 70, mcq: 30 },
+    religion:    { cq: 70, mcq: 30 },
+    ict:         { mcq: 25, practical: 25 },
+    science:     { cq: 70, mcq: 30 },
+    bgs:         { cq: 70, mcq: 30 },
+    agriculture: { cq: 50 }
+  };
+  const MAX_MARKS_SCI = {
+    bangla1:     { cq: 70, mcq: 30 },
+    bangla2:     { cq: 70, mcq: 30 },
+    english1:    { cq: 100 },
+    english2:    { cq: 100 },
+    math:        { cq: 70, mcq: 30 },
+    religion:    { cq: 70, mcq: 30 },
+    ict:         { mcq: 25, practical: 25 },
+    bgs:         { cq: 70, mcq: 30 },
+    physics:     { cq: 50, mcq: 25, practical: 25 },
+    chemistry:   { cq: 50, mcq: 25, practical: 25 },
+    biology:     { cq: 50, mcq: 25, practical: 25 },
+    higher_math: { cq: 50, mcq: 25, practical: 25 }
+  };
+  const MAX_MARKS_HUM = {
+    bangla1:          { cq: 70, mcq: 30 },
+    bangla2:          { cq: 70, mcq: 30 },
+    english1:         { cq: 100 },
+    english2:         { cq: 100 },
+    math:             { cq: 70, mcq: 30 },
+    religion:         { cq: 70, mcq: 30 },
+    ict:              { mcq: 25, practical: 25 },
+    civics_economics: { cq: 70, mcq: 30 },
+    history:          { cq: 70, mcq: 30 },
+    geography:        { cq: 70, mcq: 30 },
+    agriculture:      { cq: 50, mcq: 25, practical: 25 },
+    science:          { cq: 70, mcq: 30 }
+  };
+  const MAX_MARKS_BUS = {
+    bangla1:                   { cq: 70, mcq: 30 },
+    bangla2:                   { cq: 70, mcq: 30 },
+    english1:                  { cq: 100 },
+    english2:                  { cq: 100 },
+    math:                      { cq: 70, mcq: 30 },
+    religion:                  { cq: 70, mcq: 30 },
+    ict:                       { mcq: 25, practical: 25 },
+    accounting:                { cq: 70, mcq: 30 },
+    business_entrepreneurship: { cq: 70, mcq: 30 },
+    finance_banking:           { cq: 70, mcq: 30 },
+    agriculture:               { cq: 50, mcq: 25, practical: 25 },
+    science:                   { cq: 70, mcq: 30 }
+  };
+  function getMaxMarksForClass(classKey) {
+    if (/^(6|7|8)_/.test(classKey)) return MAX_MARKS_6_8;
+    if (classKey === "9_SCI" || classKey === "10_SCI") return MAX_MARKS_SCI;
+    if (classKey === "9_HUM" || classKey === "10_HUM") return MAX_MARKS_HUM;
+    if (classKey === "9_BUS" || classKey === "10_BUS") return MAX_MARKS_BUS;
+    return {};
+  }
+
+  // নির্দিষ্ট classKey + subject + field (cq/mcq/practical)-এর জন্য min/max/placeholder বের করা
+  // যদি টেবিলে কনফিগার করা না থাকে, তাহলে একটি নিরাপদ ডিফল্ট মান ব্যবহার হবে
+  const DEFAULT_FIELD_MAX = { cq: 100, mcq: 30, practical: 25 };
+  function getFieldRange(classKey, subject, field) {
+    const table = getMaxMarksForClass(classKey);
+    const subjectMax = table[subject] || {};
+    const max = (typeof subjectMax[field] === "number") ? subjectMax[field] : DEFAULT_FIELD_MAX[field];
+    return { min: 0, max: max, placeholder: `0-${max}` };
+  }
+
   function moveCursor(currentInput, nextInputId) {
     // ইনপুট পূর্ণ হলে বা Tab/Enter চাপলে পরের ইনপুটে ফোকাস যাবে
     const nextInput = document.getElementById(nextInputId);
@@ -462,12 +543,6 @@
   let currentExamKey = "";
   let currentExamYear = "";
 
-  // প্রতিটি ফিল্ডের ইনপুট রেঞ্জ (প্রয়োজনে বিষয়ভেদে পরিবর্তন করুন)
-  const FIELD_RANGES = {
-    cq:        { min: 0, max: 99, placeholder: "0-99" },
-    mcq:       { min: 0, max: 30, placeholder: "0-30" },
-    practical: { min: 0, max: 25, placeholder: "0-25" }
-  };
   const FIELD_LABELS = { cq: "CQ", mcq: "MCQ", practical: "Practical" };
 
   // ============================================================
@@ -696,14 +771,17 @@
     }
 
     let html = "<table><thead><tr><th>রোল</th><th>নাম</th>";
-    fieldOrder.forEach(f => { html += `<th>${FIELD_LABELS[f]}</th>`; });
+    fieldOrder.forEach(f => {
+      const r = getFieldRange(currentClassKey, subject, f);
+      html += `<th>${FIELD_LABELS[f]} (${r.max})</th>`;
+    });
     html += "</tr></thead><tbody>";
 
     pageStudents.forEach((s) => {
       html += `<tr><td>${s.roll}</td><td>${s.name}</td>`;
 
       fieldOrder.forEach((field, idx) => {
-        const range = FIELD_RANGES[field];
+        const range = getFieldRange(currentClassKey, subject, field);
         const isLastField = idx === fieldOrder.length - 1;
         const nextId = isLastField
           ? (getNextStudentFirstFieldId(s.roll, fieldOrder) || `${field}_${s.roll}`)
@@ -816,11 +894,13 @@
           return;
         }
         const num = Number(raw);
-        const range = FIELD_RANGES[field];
+        const range = getFieldRange(currentClassKey, subject, field);
         if (isNaN(num) || num < range.min || num > range.max) {
           showMessage(`${FIELD_LABELS[field]} নম্বর ${range.min} থেকে ${range.max} এর মধ্যে হতে হবে রোল: ${s.roll}`, 'error');
+          input.classList.add('invalid');
           return;
         }
+        input.classList.remove('invalid');
         entry[field] = num;
         hasAnyValue = true;
       }
