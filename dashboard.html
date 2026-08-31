@@ -517,10 +517,17 @@
     return { min: 0, max: max, placeholder: `0-${max}` };
   }
 
-  function moveCursor(currentInput, nextInputId) {
-    // ইনপুট পূর্ণ হলে বা Tab/Enter চাপলে পরের ইনপুটে ফোকাস যাবে
+  function moveCursor(currentInput, nextInputId, maxValue) {
+    // max মান যত ডিজিটের, ততগুলো ডিজিট টাইপ হলে তবেই পরের ইনপুটে ফোকাস যাবে
+    // (যেমন max=30 হলে ২ ডিজিট, max=100 হলে ৩ ডিজিট পূরণ হলে জাম্প করবে)
+    const digitsNeeded = String(Math.abs(Math.trunc(maxValue))).length;
+    if (currentInput.value.trim().length < digitsNeeded) return;
+
     const nextInput = document.getElementById(nextInputId);
-    if (nextInput) nextInput.focus();
+    if (nextInput) {
+      nextInput.focus();
+      nextInput.select();
+    }
   }
 
   // বর্তমান রোলের পরের ছাত্র/ছাত্রীর প্রথম ফিল্ড আইডি বের করা
@@ -787,7 +794,7 @@
           ? (getNextStudentFirstFieldId(s.roll, fieldOrder) || `${field}_${s.roll}`)
           : `${fieldOrder[idx + 1]}_${s.roll}`;
 
-        html += `<td><input type="number" id="${field}_${s.roll}" min="${range.min}" max="${range.max}" placeholder="${range.placeholder}" oninput="moveCursor(this, '${nextId}')"></td>`;
+        html += `<td><input type="number" id="${field}_${s.roll}" min="${range.min}" max="${range.max}" placeholder="${range.placeholder}" oninput="moveCursor(this, '${nextId}', ${range.max})"></td>`;
       });
 
       html += "</tr>";
