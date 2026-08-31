@@ -518,9 +518,9 @@
   }
 
   function moveCursor(currentInput, nextInputId, maxValue) {
-    // max মান যত ডিজিটের, ততগুলো ডিজিট টাইপ হলে তবেই পরের ইনপুটে ফোকাস যাবে
-    // (যেমন max=30 হলে ২ ডিজিট, max=100 হলে ৩ ডিজিট পূরণ হলে জাম্প করবে)
-    const digitsNeeded = String(Math.abs(Math.trunc(maxValue))).length;
+    // max মান যত ডিজিটেরই হোক (৩০ হোক বা ১০০), সর্বোচ্চ ২ ডিজিট পূর্ণ হলেই
+    // পরের ইনপুটে ফোকাস চলে যাবে
+    const digitsNeeded = Math.min(2, String(Math.abs(Math.trunc(maxValue))).length);
     if (currentInput.value.trim().length < digitsNeeded) return;
 
     const nextInput = document.getElementById(nextInputId);
