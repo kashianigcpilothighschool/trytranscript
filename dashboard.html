@@ -39,7 +39,6 @@
     *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
   }
 
-  /* ---------- টপ ব্যান্ড: প্রাতিষ্ঠানিক লেটারহেড ---------- */
   .top-band{
     background:var(--ink);
     padding:22px 20px 18px;
@@ -71,14 +70,12 @@
     text-transform:uppercase;
   }
 
-  /* ---------- কন্টেইনার ---------- */
   .container{
     max-width:900px;
     margin:22px auto 0;
     padding:0 16px;
   }
 
-  /* ---------- শ্রেণি/শাখা/পরীক্ষা নির্বাচন কার্ড ---------- */
   .tab-card{
     background:var(--card);
     border:1px solid var(--border);
@@ -133,7 +130,6 @@
     .tab-card{ grid-template-columns:1fr 1fr; }
   }
 
-  /* ---------- কন্ট্রোল সেকশন (সার্চ + বিষয়) ---------- */
   .controls-card{
     background:var(--card);
     border:1px solid var(--border);
@@ -148,7 +144,6 @@
     .controls-card{ grid-template-columns:1fr; }
   }
 
-  /* ---------- মূল প্যানেল ---------- */
   .panel{
     background:var(--card);
     border:1px solid var(--border);
@@ -192,7 +187,6 @@
   .message.success{ background:var(--leaf-soft); color:var(--leaf); border:1px solid #BFE0CC; }
   .message.error{ background:var(--stamp-bg); color:var(--stamp); border:1px solid #F0C2BB; }
 
-  /* ---------- রেজিস্টার টেবিল ---------- */
   .table-wrap{ overflow-x:auto; padding:0 16px 8px; }
   table{
     width:100%;
@@ -241,7 +235,6 @@
   }
   td input[type=number]:focus{ background:#fff; }
 
-  /* ---------- পেজিনেশন ---------- */
   .pagination-row{
     display:flex;
     justify-content:center;
@@ -283,7 +276,6 @@
   .btn-submit:hover{ background:#255A3F; }
   .btn-submit:disabled{ background:#A9BFB2; border-color:#A9BFB2; cursor:not-allowed; }
 
-  /* ---------- নিচের স্টিকি অ্যাকশন বার ---------- */
   .action-bar{
     position:fixed;
     bottom:0; left:0; right:0;
@@ -360,18 +352,8 @@
     <div class="controls-card">
       <div class="field">
         <label for="subjectSelect"><span class="ic">📘</span> বিষয়</label>
-        <select id="subjectSelect" onchange="resetPaginationAndSearch()">
-          <option value="">--বিষয় নির্বাচন করুন--</option>
-          <option value="Bangla1">Bangla1</option>
-          <option value="Bangla2">Bangla2</option>
-          <option value="English1">English1</option>
-          <option value="English2">English2</option>
-          <option value="Math">Math</option>
-          <option value="Religion">Religion</option>
-          <option value="Science">Science</option>
-          <option value="BGS">BGS</option>
-          <option value="ICT">ICT</option>
-          <option value="Agriculture">Agriculture</option>
+        <select id="subjectSelect" onchange="resetPaginationAndSearch()" disabled>
+          <option value="">--প্রথমে শ্রেণি/শাখা নির্বাচন করুন--</option>
         </select>
       </div>
       <div class="field">
@@ -393,7 +375,7 @@
       </div>
 
       <div class="pagination-row">
-        <button class="pg-btn" onclick="prevStudentInfo()" id="prevBtn" disabled>⬅ পূর্ববর্তী</button>
+        <button class="pg-btn" onclick="prevPage()" id="prevBtn" disabled>⬅ পূর্ববর্তী</button>
         <span id="pageInfo"></span>
         <button class="pg-btn" onclick="nextPage()" id="nextBtn" disabled>পরবর্তী ➡</button>
         <button class="btn-submit" onclick="submitMarks()" id="submitBtn">✅ সাবমিট করুন</button>
@@ -413,11 +395,9 @@
 <script>
   // ============================================================
   // 🌐 আপনার Apps Script Web App-এর ডিপ্লয়মেন্ট URL এখানে বসান
-  // (index.html-এ যে URL দিয়েছেন, ঠিক সেটাই এখানেও দিন)
   // ============================================================
   const API_URL = "https://script.google.com/macros/s/AKfycbxdVOwIpzWCSt6orqJxtEKMNJq438uBmi-QPWO1sYdnjT5KUuldr-oGfxlMsQ-m5TyzZA/exec";
 
-  // doPost -> routeApiAction এর মাধ্যমে সার্ভার ফাংশন কল করার হেল্পার
   async function callApi(action, params) {
     const res = await fetch(API_URL, {
       method: "POST",
@@ -435,38 +415,40 @@
   }
 
   // ============================================================
-  // 🔑 লগইনের সময় পাওয়া সেশন টোকেন — URL প্যারামিটার থেকে নেওয়া হচ্ছে
-  // (index.html থেকে dashboard.html?token=xxxx আকারে রিডাইরেক্ট হয়ে আসে)
+  // 🔑 সেশন টোকেন
   // ============================================================
   const sessionToken = new URLSearchParams(window.location.search).get('token') || "";
 
   if (!sessionToken) {
-    // টোকেন না থাকলে সরাসরি লগইন পেজে ফেরত পাঠানো হচ্ছে
     window.location.href = "index.html";
   }
 
-  // প্রতিটি ক্লাস-সংখ্যার জন্য বাংলা লেবেল
   const classNumberLabels = {
     "6": "৬ষ্ঠ শ্রেণি", "7": "৭ম শ্রেণি", "8": "৮ম শ্রেণি",
     "9": "৯ম শ্রেণি", "10": "১০ম শ্রেণি"
   };
 
-  // অনুমোদিত ক্লাস তালিকা থেকে তৈরি হওয়া ম্যাপ: { "6": [{key:"6_A", label:"..."}], ... }
   let classToSections = {};
 
-  function moveCursor(currentInput, nextInputId, maxLength = 2) {
-    if (currentInput.value.length >= maxLength) {
-      const nextInput = document.getElementById(nextInputId);
-      if (nextInput) nextInput.focus();
-    }
+  // ============================================================
+  // 📘 বর্তমানে নির্বাচিত ক্লাসের বিষয় তালিকা ও মেটাডেটা
+  // subjectsMeta["math"] = { label, hasCq, hasMcq, hasPractical }
+  // ============================================================
+  let subjectsMeta = {};
+
+  function moveCursor(currentInput, nextInputId) {
+    // ইনপুট পূর্ণ হলে বা Tab/Enter চাপলে পরের ইনপুটে ফোকাস যাবে
+    const nextInput = document.getElementById(nextInputId);
+    if (nextInput) nextInput.focus();
   }
 
-  function getNextStudentCQId(currentRoll) {
+  // বর্তমান রোলের পরের ছাত্র/ছাত্রীর প্রথম ফিল্ড আইডি বের করা
+  function getNextStudentFirstFieldId(currentRoll, fieldOrder) {
     const start = currentPage * pageSize;
     const pageStudents = filteredStudents.slice(start, start + pageSize);
     for (let i = 0; i < pageStudents.length; i++) {
       if (pageStudents[i].roll == currentRoll && i < pageStudents.length - 1) {
-        return `cq_${pageStudents[i + 1].roll}`;
+        return `${fieldOrder[0]}_${pageStudents[i + 1].roll}`;
       }
     }
     return null;
@@ -480,13 +462,16 @@
   let currentExamKey = "";
   let currentExamYear = "";
 
-  const mcqSubjects = {
-    "Bangla1": true, "Bangla2": true, "English1": false, "English2": false,
-    "Math": true, "Religion": true, "Science": true, "BGS": true, "ICT": true, "Agriculture": false
+  // প্রতিটি ফিল্ডের ইনপুট রেঞ্জ (প্রয়োজনে বিষয়ভেদে পরিবর্তন করুন)
+  const FIELD_RANGES = {
+    cq:        { min: 0, max: 99, placeholder: "0-99" },
+    mcq:       { min: 0, max: 30, placeholder: "0-30" },
+    practical: { min: 0, max: 25, placeholder: "0-25" }
   };
+  const FIELD_LABELS = { cq: "CQ", mcq: "MCQ", practical: "Practical" };
 
   // ============================================================
-  // 📋 পেজ লোড হলে সার্ভার থেকে ইউজারের অনুমোদিত ক্লাসের তালিকা আনা
+  // 📋 অনুমোদিত ক্লাসের তালিকা আনা
   // ============================================================
   function initClassOptions() {
     callApi("getClassList", { token: sessionToken })
@@ -557,6 +542,7 @@
     currentClassKey = "";
     allStudents = [];
     filteredStudents = [];
+    resetSubjectSelect();
     document.getElementById("studentsContainer").innerHTML =
       "<p class='status-msg'>অনুগ্রহ করে শাখা/গ্রুপ নির্বাচন করুন।</p>";
     document.getElementById("pageInfo").textContent = "";
@@ -565,6 +551,11 @@
 
   function onSectionChange() {
     currentClassKey = document.getElementById("sectionSelect").value;
+    if (currentClassKey) {
+      loadSubjects(currentClassKey);
+    } else {
+      resetSubjectSelect();
+    }
     tryLoadStudents();
   }
 
@@ -574,7 +565,37 @@
     tryLoadStudents();
   }
 
-  // চারটি ফিল্ড (শ্রেণি, শাখা, পরীক্ষার নাম, সাল) সব নির্বাচিত হলেই তালিকা লোড হবে
+  function resetSubjectSelect() {
+    subjectsMeta = {};
+    const subjectSelect = document.getElementById("subjectSelect");
+    subjectSelect.innerHTML = '<option value="">--প্রথমে শ্রেণি/শাখা নির্বাচন করুন--</option>';
+    subjectSelect.disabled = true;
+  }
+
+  // ============================================================
+  // 📘 নির্বাচিত classKey অনুযায়ী বিষয়ের তালিকা সার্ভার থেকে আনা
+  // ============================================================
+  function loadSubjects(classKey) {
+    const subjectSelect = document.getElementById("subjectSelect");
+    subjectSelect.disabled = true;
+    subjectSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
+
+    callApi("getSubjects", { classKey: classKey })
+      .then(function(subjects) {
+        subjectsMeta = {};
+        subjectSelect.innerHTML = '<option value="">--বিষয় নির্বাচন করুন--</option>';
+        subjects.forEach(subj => {
+          subjectsMeta[subj.key] = subj;
+          subjectSelect.innerHTML += `<option value="${subj.key}">${subj.label}</option>`;
+        });
+        subjectSelect.disabled = false;
+      })
+      .catch(function(error) {
+        showMessage('বিষয় তালিকা লোড করতে সমস্যা হয়েছে: ' + error.message, 'error');
+        resetSubjectSelect();
+      });
+  }
+
   function tryLoadStudents() {
     if (currentClassKey && currentExamKey && currentExamYear) {
       resetPaginationAndSearch();
@@ -630,6 +651,17 @@
       });
   }
 
+  // নির্বাচিত বিষয় অনুযায়ী কোন কোন ফিল্ড (cq/mcq/practical) দেখাতে হবে তার ক্রম বের করা
+  function getFieldOrder(subject) {
+    const meta = subjectsMeta[subject];
+    if (!meta) return [];
+    const order = [];
+    if (meta.hasCq) order.push('cq');
+    if (meta.hasMcq) order.push('mcq');
+    if (meta.hasPractical) order.push('practical');
+    return order;
+  }
+
   function renderStudents() {
     const subject = document.getElementById("subjectSelect").value;
     const container = document.getElementById("studentsContainer");
@@ -647,6 +679,13 @@
       return;
     }
 
+    const fieldOrder = getFieldOrder(subject);
+    if (fieldOrder.length === 0) {
+      container.innerHTML = "<p class='status-msg'>এই বিষয়ের জন্য কোনো ইনপুট ফিল্ড কনফিগার করা নেই।</p>";
+      pageInfo.textContent = "";
+      return;
+    }
+
     const start = currentPage * pageSize;
     const pageStudents = filteredStudents.slice(start, start + pageSize);
 
@@ -656,20 +695,23 @@
       return;
     }
 
-    let html = "<table><thead><tr><th>রোল</th><th>নাম</th><th>CQ</th>";
-    if (mcqSubjects[subject]) html += "<th>MCQ</th>";
+    let html = "<table><thead><tr><th>রোল</th><th>নাম</th>";
+    fieldOrder.forEach(f => { html += `<th>${FIELD_LABELS[f]}</th>`; });
     html += "</tr></thead><tbody>";
 
     pageStudents.forEach((s) => {
-      const nextStudentCQId = getNextStudentCQId(s.roll);
-      html += `<tr>
-        <td>${s.roll}</td>
-        <td>${s.name}</td>
-        <td><input type="number" id="cq_${s.roll}" min="0" max="70" placeholder="0-70" oninput="moveCursor(this, '${mcqSubjects[subject] ? 'mcq_' + s.roll : (nextStudentCQId || 'cq_' + s.roll)}')"></td>`;
+      html += `<tr><td>${s.roll}</td><td>${s.name}</td>`;
 
-      if (mcqSubjects[subject]) {
-        html += `<td><input type="number" id="mcq_${s.roll}" min="0" max="30" placeholder="0-30" oninput="moveCursor(this, '${nextStudentCQId || 'mcq_' + s.roll}')"></td>`;
-      }
+      fieldOrder.forEach((field, idx) => {
+        const range = FIELD_RANGES[field];
+        const isLastField = idx === fieldOrder.length - 1;
+        const nextId = isLastField
+          ? (getNextStudentFirstFieldId(s.roll, fieldOrder) || `${field}_${s.roll}`)
+          : `${fieldOrder[idx + 1]}_${s.roll}`;
+
+        html += `<td><input type="number" id="${field}_${s.roll}" min="${range.min}" max="${range.max}" placeholder="${range.placeholder}" oninput="moveCursor(this, '${nextId}')"></td>`;
+      });
+
       html += "</tr>";
     });
 
@@ -718,23 +760,18 @@
   function openEditor() {
     window.open('https://editor-seven-zeta.vercel.app/', '_blank');
   }
-
   function openTranscript() {
     window.open('https://edu-kashianigcpilothighschool.vercel.app/academic-transcript', '_blank');
   }
-
   function openTabulation() {
     window.open('https://resultbook.vercel.app/', '_blank');
   }
-
   function openStudentInfo() {
     window.open('https://editor-seven-zeta.vercel.app/addnewstudent', '_blank');
   }
-
   function openPaper() {
     window.open('http://kashiani1.pages.dev/', '_blank');
   }
-
   function openOthers() {
     window.open('https://script.google.com/macros/s/AKfycbzCfMiWKqr1BIdvYFXm2Tq9hbUAKZ8GOPjhoolUr94jQMy8n1YHVzAsfLH-Xhx9YMRa/exec', '_blank');
   }
@@ -751,6 +788,12 @@
       return;
     }
 
+    const fieldOrder = getFieldOrder(subject);
+    if (fieldOrder.length === 0) {
+      showMessage("এই বিষয়ের জন্য কোনো ইনপুট ফিল্ড কনফিগার করা নেই।", 'error');
+      return;
+    }
+
     const marksData = [];
     const submitBtn = document.getElementById('submitBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -758,42 +801,31 @@
     const pageStudents = filteredStudents.slice(start, start + pageSize);
 
     for (const s of pageStudents) {
-      const cqInput = document.getElementById(`cq_${s.roll}`);
-      if (!cqInput) {
-        showMessage(`CQ ইনপুট পাওয়া যায়নি রোল: ${s.roll}`, 'error');
-        return;
-      }
-      let cq = cqInput.value.trim();
-      if (cq === "") {
-        showMessage(`CQ নম্বর পূরণ করুন রোল: ${s.roll}`, 'error');
-        return;
-      }
-      cq = Number(cq);
-      if (isNaN(cq) || cq < 0 || cq > 99) {
-        showMessage(`CQ নম্বর ০ থেকে ৯৯ এর মধ্যে হতে হবে রোল: ${s.roll}`, 'error');
-        return;
+      const entry = { roll: s.roll, subject: subject };
+      let hasAnyValue = false;
+
+      for (const field of fieldOrder) {
+        const input = document.getElementById(`${field}_${s.roll}`);
+        if (!input) {
+          showMessage(`${FIELD_LABELS[field]} ইনপুট পাওয়া যায়নি রোল: ${s.roll}`, 'error');
+          return;
+        }
+        const raw = input.value.trim();
+        if (raw === "") {
+          showMessage(`${FIELD_LABELS[field]} নম্বর পূরণ করুন রোল: ${s.roll}`, 'error');
+          return;
+        }
+        const num = Number(raw);
+        const range = FIELD_RANGES[field];
+        if (isNaN(num) || num < range.min || num > range.max) {
+          showMessage(`${FIELD_LABELS[field]} নম্বর ${range.min} থেকে ${range.max} এর মধ্যে হতে হবে রোল: ${s.roll}`, 'error');
+          return;
+        }
+        entry[field] = num;
+        hasAnyValue = true;
       }
 
-      let mcq = 0;
-      if (mcqSubjects[subject]) {
-        const mcqInput = document.getElementById(`mcq_${s.roll}`);
-        if (!mcqInput) {
-          showMessage(`MCQ ইনপুট পাওয়া যায়নি রোল: ${s.roll}`, 'error');
-          return;
-        }
-        mcq = mcqInput.value.trim();
-        if (mcq === "") {
-          showMessage(`MCQ নম্বর পূরণ করুন রোল: ${s.roll}`, 'error');
-          return;
-        }
-        mcq = Number(mcq);
-        if (isNaN(mcq) || mcq < 0 || mcq > 30) {
-          showMessage(`MCQ নম্বর ০ থেকে ৩০ এর মধ্যে হতে হবে রোল: ${s.roll}`, 'error');
-          return;
-        }
-      }
-
-      marksData.push({ roll: s.roll, cq: cq, mcq: mcq, subject: subject });
+      if (hasAnyValue) marksData.push(entry);
     }
 
     submitBtn.disabled = true;
@@ -828,7 +860,6 @@
       });
   }
 
-  // পেজ লোড হওয়ার সাথে সাথে অনুমোদিত ক্লাস তালিকা ও পরীক্ষার তালিকা আনা হচ্ছে
   initClassOptions();
   initExamOptions();
 </script>
